@@ -5,22 +5,22 @@
 // ensure the user gets the right status code and we can display a nicer error
 // message for them than the Remix and/or browser default.
 
-import { Link, useLocation } from '@remix-run/react'
-import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
-import { Icon } from '#app/components/ui/icon.tsx'
+import { Link, useLocation } from "@remix-run/react";
+import { GeneralErrorBoundary } from "#app/components/error-boundary.tsx";
+import { ArrowLeftIcon } from "@radix-ui/react-icons";
 
 export async function loader() {
-	throw new Response('Not found', { status: 404 })
+	throw new Response("Not found", { status: 404 });
 }
 
 export default function NotFound() {
 	// due to the loader, this component will never be rendered, but we'll return
 	// the error boundary just in case.
-	return <ErrorBoundary />
+	return <ErrorBoundary />;
 }
 
 export function ErrorBoundary() {
-	const location = useLocation()
+	const location = useLocation();
 	return (
 		<GeneralErrorBoundary
 			statusHandlers={{
@@ -33,11 +33,11 @@ export function ErrorBoundary() {
 							</pre>
 						</div>
 						<Link to="/" className="text-body-md underline">
-							<Icon name="arrow-left">Back to home</Icon>
+							<ArrowLeftIcon /> Back to home
 						</Link>
 					</div>
 				),
 			}}
 		/>
-	)
+	);
 }

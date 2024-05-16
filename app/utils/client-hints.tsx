@@ -2,30 +2,30 @@
  * This file contains utilities for using client hints for user preference which
  * are needed by the server, but are only known by the browser.
  */
-import { getHintUtils } from '@epic-web/client-hints'
+import { getHintUtils } from "@epic-web/client-hints";
 import {
 	clientHint as colorSchemeHint,
 	subscribeToSchemeChange,
-} from '@epic-web/client-hints/color-scheme'
-import { clientHint as timeZoneHint } from '@epic-web/client-hints/time-zone'
-import { useRevalidator } from '@remix-run/react'
-import * as React from 'react'
-import { useRequestInfo } from './request-info.ts'
+} from "@epic-web/client-hints/color-scheme";
+import { clientHint as timeZoneHint } from "@epic-web/client-hints/time-zone";
+import { useRevalidator } from "@remix-run/react";
+import * as React from "react";
+import { useRequestInfo } from "./request-info.ts";
 
 const hintsUtils = getHintUtils({
 	theme: colorSchemeHint,
 	timeZone: timeZoneHint,
 	// add other hints here
-})
+});
 
-export const { getHints } = hintsUtils
+export const { getHints } = hintsUtils;
 
 /**
  * @returns an object with the client hints and their values
  */
 export function useHints() {
-	const requestInfo = useRequestInfo()
-	return requestInfo.hints
+	const requestInfo = useRequestInfo();
+	return requestInfo.hints;
 }
 
 /**
@@ -34,11 +34,11 @@ export function useHints() {
  * inaccurate value.
  */
 export function ClientHintCheck({ nonce }: { nonce: string }) {
-	const { revalidate } = useRevalidator()
+	const { revalidate } = useRevalidator();
 	React.useEffect(
 		() => subscribeToSchemeChange(() => revalidate()),
 		[revalidate],
-	)
+	);
 
 	return (
 		<script
@@ -47,5 +47,5 @@ export function ClientHintCheck({ nonce }: { nonce: string }) {
 				__html: hintsUtils.getClientHintCheckScript(),
 			}}
 		/>
-	)
+	);
 }

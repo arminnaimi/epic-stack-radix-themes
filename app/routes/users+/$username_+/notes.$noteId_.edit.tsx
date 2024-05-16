@@ -1,15 +1,15 @@
-import { invariantResponse } from '@epic-web/invariant'
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
-import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
-import { requireUserId } from '#app/utils/auth.server.ts'
-import { prisma } from '#app/utils/db.server.ts'
-import { NoteEditor } from './__note-editor.tsx'
+import { invariantResponse } from "@epic-web/invariant";
+import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
+import { GeneralErrorBoundary } from "#app/components/error-boundary.tsx";
+import { requireUserId } from "#app/utils/auth.server.ts";
+import { prisma } from "#app/utils/db.server.ts";
+import { NoteEditor } from "./__note-editor.tsx";
 
-export { action } from './__note-editor.server.tsx'
+export { action } from "./__note-editor.server.tsx";
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
-	const userId = await requireUserId(request)
+	const userId = await requireUserId(request);
 	const note = await prisma.note.findFirst({
 		select: {
 			id: true,
@@ -26,15 +26,15 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 			id: params.noteId,
 			ownerId: userId,
 		},
-	})
-	invariantResponse(note, 'Not found', { status: 404 })
-	return json({ note: note })
+	});
+	invariantResponse(note, "Not found", { status: 404 });
+	return json({ note: note });
 }
 
 export default function NoteEdit() {
-	const data = useLoaderData<typeof loader>()
+	const data = useLoaderData<typeof loader>();
 
-	return <NoteEditor note={data.note} />
+	return <NoteEditor note={data.note} />;
 }
 
 export function ErrorBoundary() {
@@ -46,5 +46,5 @@ export function ErrorBoundary() {
 				),
 			}}
 		/>
-	)
+	);
 }

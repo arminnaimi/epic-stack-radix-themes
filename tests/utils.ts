@@ -1,24 +1,24 @@
-import * as setCookieParser from 'set-cookie-parser'
-import { sessionKey } from '#app/utils/auth.server.ts'
-import { authSessionStorage } from '#app/utils/session.server.ts'
+import * as setCookieParser from "set-cookie-parser";
+import { sessionKey } from "#app/utils/auth.server.ts";
+import { authSessionStorage } from "#app/utils/session.server.ts";
 
-export const BASE_URL = 'https://www.epicstack.dev'
+export const BASE_URL = "https://www.epicstack.dev";
 
 export function convertSetCookieToCookie(setCookie: string) {
-	const parsedCookie = setCookieParser.parseString(setCookie)
+	const parsedCookie = setCookieParser.parseString(setCookie);
 	return new URLSearchParams({
 		[parsedCookie.name]: parsedCookie.value,
-	}).toString()
+	}).toString();
 }
 
 export async function getSessionSetCookieHeader(
 	session: { id: string },
 	existingCookie?: string,
 ) {
-	const authSession = await authSessionStorage.getSession(existingCookie)
-	authSession.set(sessionKey, session.id)
-	const setCookieHeader = await authSessionStorage.commitSession(authSession)
-	return setCookieHeader
+	const authSession = await authSessionStorage.getSession(existingCookie);
+	authSession.set(sessionKey, session.id);
+	const setCookieHeader = await authSessionStorage.commitSession(authSession);
+	return setCookieHeader;
 }
 
 export async function getSessionCookieHeader(
@@ -28,6 +28,6 @@ export async function getSessionCookieHeader(
 	const setCookieHeader = await getSessionSetCookieHeader(
 		session,
 		existingCookie,
-	)
-	return convertSetCookieToCookie(setCookieHeader)
+	);
+	return convertSetCookieToCookie(setCookieHeader);
 }

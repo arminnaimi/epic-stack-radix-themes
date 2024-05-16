@@ -1,6 +1,6 @@
-import { useForm, getFormProps } from '@conform-to/react'
-import { parseWithZod } from '@conform-to/zod'
-import { invariantResponse } from '@epic-web/invariant'
+import { useForm, getFormProps } from "@conform-to/react";
+import { parseWithZod } from "@conform-to/zod";
+import { invariantResponse } from "@epic-web/invariant";
 import {
 	json,
 	type LoaderFunctionArgs,
@@ -8,7 +8,7 @@ import {
 	type HeadersFunction,
 	type LinksFunction,
 	type MetaFunction,
-} from '@remix-run/node'
+} from "@remix-run/node";
 import {
 	Form,
 	Link,
@@ -22,76 +22,81 @@ import {
 	useLoaderData,
 	useMatches,
 	useSubmit,
-} from '@remix-run/react'
-import { withSentry } from '@sentry/remix'
-import { useRef } from 'react'
-import { HoneypotProvider } from 'remix-utils/honeypot/react'
-import { z } from 'zod'
-import { GeneralErrorBoundary } from './components/error-boundary.tsx'
-import { EpicProgress } from './components/progress-bar.tsx'
-import { SearchBar } from './components/search-bar.tsx'
-import { useToast } from './components/toaster.tsx'
-import { Button } from './components/ui/button.tsx'
+} from "@remix-run/react";
+import { withSentry } from "@sentry/remix";
+import { useRef } from "react";
+import { HoneypotProvider } from "remix-utils/honeypot/react";
+import { z } from "zod";
+import { GeneralErrorBoundary } from "./components/error-boundary.tsx";
+import { EpicProgress } from "./components/progress-bar.tsx";
+import { SearchBar } from "./components/search-bar.tsx";
+import { useToast } from "./components/toaster.tsx";
+import "@radix-ui/themes/styles.css";
+import tailwindStyleSheetUrl from "./styles/tailwind.css?url";
+import { getUserId, logout } from "./utils/auth.server.ts";
+import { ClientHintCheck, getHints, useHints } from "./utils/client-hints.tsx";
+import { prisma } from "./utils/db.server.ts";
+import { getEnv } from "./utils/env.server.ts";
+import { honeypot } from "./utils/honeypot.server.ts";
+import { combineHeaders, getDomainUrl, getUserImgSrc } from "./utils/misc.tsx";
+import { useNonce } from "./utils/nonce-provider.ts";
+import { useRequestInfo } from "./utils/request-info.ts";
+import { type Theme, setTheme, getTheme } from "./utils/theme.server.ts";
+import { makeTimings, time } from "./utils/timing.server.ts";
+import { getToast } from "./utils/toast.server.ts";
+import { useOptionalUser, useUser } from "./utils/user.ts";
 import {
+	Theme as RadixTheme,
 	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuPortal,
-	DropdownMenuTrigger,
-} from './components/ui/dropdown-menu.tsx'
-import { Icon, href as iconsHref } from './components/ui/icon.tsx'
-import { EpicToaster } from './components/ui/sonner.tsx'
-import tailwindStyleSheetUrl from './styles/tailwind.css?url'
-import { getUserId, logout } from './utils/auth.server.ts'
-import { ClientHintCheck, getHints, useHints } from './utils/client-hints.tsx'
-import { prisma } from './utils/db.server.ts'
-import { getEnv } from './utils/env.server.ts'
-import { honeypot } from './utils/honeypot.server.ts'
-import { combineHeaders, getDomainUrl, getUserImgSrc } from './utils/misc.tsx'
-import { useNonce } from './utils/nonce-provider.ts'
-import { useRequestInfo } from './utils/request-info.ts'
-import { type Theme, setTheme, getTheme } from './utils/theme.server.ts'
-import { makeTimings, time } from './utils/timing.server.ts'
-import { getToast } from './utils/toast.server.ts'
-import { useOptionalUser, useUser } from './utils/user.ts'
+	Button,
+	IconButton,
+	Flex,
+} from "@radix-ui/themes";
+import {
+	Pencil2Icon,
+	AvatarIcon,
+	ExitIcon,
+	SunIcon,
+	MoonIcon,
+	LaptopIcon,
+} from "@radix-ui/react-icons";
+import { EpicToaster } from "./components/ui/sonner.tsx";
 
 export const links: LinksFunction = () => {
 	return [
-		// Preload svg sprite as a resource to avoid render blocking
-		{ rel: 'preload', href: iconsHref, as: 'image' },
 		// Preload CSS as a resource to avoid render blocking
-		{ rel: 'mask-icon', href: '/favicons/mask-icon.svg' },
+		{ rel: "mask-icon", href: "/favicons/mask-icon.svg" },
 		{
-			rel: 'alternate icon',
-			type: 'image/png',
-			href: '/favicons/favicon-32x32.png',
+			rel: "alternate icon",
+			type: "image/png",
+			href: "/favicons/favicon-32x32.png",
 		},
-		{ rel: 'apple-touch-icon', href: '/favicons/apple-touch-icon.png' },
+		{ rel: "apple-touch-icon", href: "/favicons/apple-touch-icon.png" },
 		{
-			rel: 'manifest',
-			href: '/site.webmanifest',
-			crossOrigin: 'use-credentials',
+			rel: "manifest",
+			href: "/site.webmanifest",
+			crossOrigin: "use-credentials",
 		} as const, // necessary to make typescript happy
 		//These should match the css preloads above to avoid css as render blocking resource
-		{ rel: 'icon', type: 'image/svg+xml', href: '/favicons/favicon.svg' },
-		{ rel: 'stylesheet', href: tailwindStyleSheetUrl },
-	].filter(Boolean)
-}
+		{ rel: "icon", type: "image/svg+xml", href: "/favicons/favicon.svg" },
+		{ rel: "stylesheet", href: tailwindStyleSheetUrl },
+	].filter(Boolean);
+};
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
 	return [
-		{ title: data ? 'Epic Notes' : 'Error | Epic Notes' },
-		{ name: 'description', content: `Your own captain's log` },
-	]
-}
+		{ title: data ? "Epic Notes" : "Error | Epic Notes" },
+		{ name: "description", content: `Your own captain's log` },
+	];
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	const timings = makeTimings('root loader')
+	const timings = makeTimings("root loader");
 	const userId = await time(() => getUserId(request), {
 		timings,
-		type: 'getUserId',
-		desc: 'getUserId in root',
-	})
+		type: "getUserId",
+		desc: "getUserId in root",
+	});
 
 	const user = userId
 		? await time(
@@ -113,17 +118,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 						},
 						where: { id: userId },
 					}),
-				{ timings, type: 'find user', desc: 'find user in root' },
+				{ timings, type: "find user", desc: "find user in root" },
 			)
-		: null
+		: null;
 	if (userId && !user) {
-		console.info('something weird happened')
+		console.info("something weird happened");
 		// something weird happened... The user is authenticated but we can't find
 		// them in the database. Maybe they were deleted? Let's log them out.
-		await logout({ request, redirectTo: '/' })
+		await logout({ request, redirectTo: "/" });
 	}
-	const { toast, headers: toastHeaders } = await getToast(request)
-	const honeyProps = honeypot.getInputProps()
+	const { toast, headers: toastHeaders } = await getToast(request);
+	const honeyProps = honeypot.getInputProps();
 
 	return json(
 		{
@@ -142,55 +147,55 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		},
 		{
 			headers: combineHeaders(
-				{ 'Server-Timing': timings.toString() },
+				{ "Server-Timing": timings.toString() },
 				toastHeaders,
 			),
 		},
-	)
+	);
 }
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	const headers = {
-		'Server-Timing': loaderHeaders.get('Server-Timing') ?? '',
-	}
-	return headers
-}
+		"Server-Timing": loaderHeaders.get("Server-Timing") ?? "",
+	};
+	return headers;
+};
 
 const ThemeFormSchema = z.object({
-	theme: z.enum(['system', 'light', 'dark']),
-})
+	theme: z.enum(["system", "light", "dark"]),
+});
 
 export async function action({ request }: ActionFunctionArgs) {
-	const formData = await request.formData()
+	const formData = await request.formData();
 	const submission = parseWithZod(formData, {
 		schema: ThemeFormSchema,
-	})
+	});
 
-	invariantResponse(submission.status === 'success', 'Invalid theme received')
+	invariantResponse(submission.status === "success", "Invalid theme received");
 
-	const { theme } = submission.value
+	const { theme } = submission.value;
 
 	const responseInit = {
-		headers: { 'set-cookie': setTheme(theme) },
-	}
-	return json({ result: submission.reply() }, responseInit)
+		headers: { "set-cookie": setTheme(theme) },
+	};
+	return json({ result: submission.reply() }, responseInit);
 }
 
 function Document({
 	children,
 	nonce,
-	theme = 'light',
+	theme = "light",
 	env = {},
 	allowIndexing = true,
 }: {
-	children: React.ReactNode
-	nonce: string
-	theme?: Theme
-	env?: Record<string, string>
-	allowIndexing?: boolean
+	children: React.ReactNode;
+	nonce: string;
+	theme?: Theme;
+	env?: Record<string, string>;
+	allowIndexing?: boolean;
 }) {
 	return (
-		<html lang="en" className={`${theme} h-full overflow-x-hidden`}>
+		<html lang="en">
 			<head>
 				<ClientHintCheck nonce={nonce} />
 				<Meta />
@@ -201,10 +206,18 @@ function Document({
 				)}
 				<Links />
 			</head>
-			<body className="bg-background text-foreground">
-				{children}
+			<body>
+				<RadixTheme
+					appearance={theme}
+					accentColor="mint"
+					grayColor="olive"
+					radius="full"
+				>
+					{children}
+				</RadixTheme>
 				<script
 					nonce={nonce}
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
 					dangerouslySetInnerHTML={{
 						__html: `window.ENV = ${JSON.stringify(env)}`,
 					}}
@@ -213,19 +226,19 @@ function Document({
 				<Scripts nonce={nonce} />
 			</body>
 		</html>
-	)
+	);
 }
 
 function App() {
-	const data = useLoaderData<typeof loader>()
-	const nonce = useNonce()
-	const user = useOptionalUser()
-	const theme = useTheme()
-	const matches = useMatches()
-	const isOnSearchPage = matches.find(m => m.id === 'routes/users+/index')
-	const searchBar = isOnSearchPage ? null : <SearchBar status="idle" />
-	const allowIndexing = data.ENV.ALLOW_INDEXING !== 'false'
-	useToast(data.toast)
+	const data = useLoaderData<typeof loader>();
+	const nonce = useNonce();
+	const user = useOptionalUser();
+	const theme = data.requestInfo.userPrefs.theme ?? undefined;
+	const matches = useMatches();
+	const isOnSearchPage = matches.find((m) => m.id === "routes/users+/index");
+	const searchBar = isOnSearchPage ? null : <SearchBar status="idle" />;
+	const allowIndexing = data.ENV.ALLOW_INDEXING !== "false";
+	useToast(data.toast);
 
 	return (
 		<Document
@@ -234,7 +247,7 @@ function App() {
 			allowIndexing={allowIndexing}
 			env={data.ENV}
 		>
-			<div className="flex h-screen flex-col justify-between">
+			<Flex height="100vh" direction="column" justify="between">
 				<header className="container py-6">
 					<nav className="flex flex-wrap items-center justify-between gap-4 sm:flex-nowrap md:gap-8">
 						<Logo />
@@ -245,7 +258,7 @@ function App() {
 							{user ? (
 								<UserDropdown />
 							) : (
-								<Button asChild variant="default" size="lg">
+								<Button asChild size="3">
 									<Link to="/login">Log In</Link>
 								</Button>
 							)}
@@ -262,11 +275,11 @@ function App() {
 					<Logo />
 					<ThemeSwitch userPreference={data.requestInfo.userPrefs.theme} />
 				</div>
-			</div>
+			</Flex>
 			<EpicToaster closeButton position="top-center" theme={theme} />
 			<EpicProgress />
 		</Document>
-	)
+	);
 }
 
 function Logo() {
@@ -279,32 +292,32 @@ function Logo() {
 				notes
 			</span>
 		</Link>
-	)
+	);
 }
 
 function AppWithProviders() {
-	const data = useLoaderData<typeof loader>()
+	const data = useLoaderData<typeof loader>();
 	return (
 		<HoneypotProvider {...data.honeyProps}>
 			<App />
 		</HoneypotProvider>
-	)
+	);
 }
 
-export default withSentry(AppWithProviders)
+export default withSentry(AppWithProviders);
 
 function UserDropdown() {
-	const user = useUser()
-	const submit = useSubmit()
-	const formRef = useRef<HTMLFormElement>(null)
+	const user = useUser();
+	const submit = useSubmit();
+	const formRef = useRef<HTMLFormElement>(null);
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button asChild variant="secondary">
+		<DropdownMenu.Root>
+			<DropdownMenu.Trigger>
+				<Button asChild variant="soft">
 					<Link
 						to={`/users/${user.username}`}
 						// this is for progressive enhancement
-						onClick={e => e.preventDefault()}
+						onClick={(e) => e.preventDefault()}
 						className="flex items-center gap-2"
 					>
 						<img
@@ -317,55 +330,37 @@ function UserDropdown() {
 						</span>
 					</Link>
 				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuPortal>
-				<DropdownMenuContent sideOffset={8} align="start">
-					<DropdownMenuItem asChild>
-						<Link prefetch="intent" to={`/users/${user.username}`}>
-							<Icon className="text-body-md" name="avatar">
-								Profile
-							</Icon>
-						</Link>
-					</DropdownMenuItem>
-					<DropdownMenuItem asChild>
-						<Link prefetch="intent" to={`/users/${user.username}/notes`}>
-							<Icon className="text-body-md" name="pencil-2">
-								Notes
-							</Icon>
-						</Link>
-					</DropdownMenuItem>
-					<DropdownMenuItem
-						asChild
-						// this prevents the menu from closing before the form submission is completed
-						onSelect={event => {
-							event.preventDefault()
-							submit(formRef.current)
-						}}
-					>
-						<Form action="/logout" method="POST" ref={formRef}>
-							<Icon className="text-body-md" name="exit">
-								<button type="submit">Logout</button>
-							</Icon>
-						</Form>
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenuPortal>
-		</DropdownMenu>
-	)
-}
+			</DropdownMenu.Trigger>
 
-/**
- * @returns the user's theme preference, or the client hint theme if the user
- * has not set a preference.
- */
-export function useTheme() {
-	const hints = useHints()
-	const requestInfo = useRequestInfo()
-	const optimisticMode = useOptimisticThemeMode()
-	if (optimisticMode) {
-		return optimisticMode === 'system' ? hints.theme : optimisticMode
-	}
-	return requestInfo.userPrefs.theme ?? hints.theme
+			<DropdownMenu.Content sideOffset={8} align="start">
+				<DropdownMenu.Item asChild>
+					<Link prefetch="intent" to={`/users/${user.username}`}>
+						<AvatarIcon />
+						Profile
+					</Link>
+				</DropdownMenu.Item>
+				<DropdownMenu.Item asChild>
+					<Link prefetch="intent" to={`/users/${user.username}/notes`}>
+						<Pencil2Icon />
+						Notes
+					</Link>
+				</DropdownMenu.Item>
+				<DropdownMenu.Item
+					asChild
+					// this prevents the menu from closing before the form submission is completed
+					onSelect={(event) => {
+						event.preventDefault();
+						submit(formRef.current);
+					}}
+				>
+					<Form action="/logout" method="POST" ref={formRef}>
+						<ExitIcon />
+						<button type="submit">Logout</button>
+					</Form>
+				</DropdownMenu.Item>
+			</DropdownMenu.Content>
+		</DropdownMenu.Root>
+	);
 }
 
 /**
@@ -373,68 +368,53 @@ export function useTheme() {
  * value it's being changed to.
  */
 export function useOptimisticThemeMode() {
-	const fetchers = useFetchers()
-	const themeFetcher = fetchers.find(f => f.formAction === '/')
+	const fetchers = useFetchers();
+	const themeFetcher = fetchers.find((f) => f.formAction === "/");
 
-	if (themeFetcher && themeFetcher.formData) {
+	if (themeFetcher?.formData) {
 		const submission = parseWithZod(themeFetcher.formData, {
 			schema: ThemeFormSchema,
-		})
+		});
 
-		if (submission.status === 'success') {
-			return submission.value.theme
+		if (submission.status === "success") {
+			return submission.value.theme;
 		}
 	}
 }
 
 function ThemeSwitch({ userPreference }: { userPreference?: Theme | null }) {
-	const fetcher = useFetcher<typeof action>()
+	const fetcher = useFetcher<typeof action>();
 
 	const [form] = useForm({
-		id: 'theme-switch',
+		id: "theme-switch",
 		lastResult: fetcher.data?.result,
-	})
+	});
 
-	const optimisticMode = useOptimisticThemeMode()
-	const mode = optimisticMode ?? userPreference ?? 'system'
+	const optimisticMode = useOptimisticThemeMode();
+	const mode = optimisticMode ?? userPreference ?? "system";
 	const nextMode =
-		mode === 'system' ? 'light' : mode === 'light' ? 'dark' : 'system'
+		mode === "system" ? "light" : mode === "light" ? "dark" : "system";
 	const modeLabel = {
-		light: (
-			<Icon name="sun">
-				<span className="sr-only">Light</span>
-			</Icon>
-		),
-		dark: (
-			<Icon name="moon">
-				<span className="sr-only">Dark</span>
-			</Icon>
-		),
-		system: (
-			<Icon name="laptop">
-				<span className="sr-only">System</span>
-			</Icon>
-		),
-	}
+		light: <SunIcon />,
+		dark: <MoonIcon />,
+		system: <LaptopIcon />,
+	};
 
 	return (
 		<fetcher.Form method="POST" {...getFormProps(form)}>
 			<input type="hidden" name="theme" value={nextMode} />
 			<div className="flex gap-2">
-				<button
-					type="submit"
-					className="flex h-8 w-8 cursor-pointer items-center justify-center"
-				>
+				<IconButton variant="soft" type="submit">
 					{modeLabel[mode]}
-				</button>
+				</IconButton>
 			</div>
 		</fetcher.Form>
-	)
+	);
 }
 
 export function ErrorBoundary() {
 	// the nonce doesn't rely on the loader so we can access that
-	const nonce = useNonce()
+	const nonce = useNonce();
 
 	// NOTE: you cannot use useLoaderData in an ErrorBoundary because the loader
 	// likely failed to run so we have to do the best we can.
@@ -448,5 +428,5 @@ export function ErrorBoundary() {
 		<Document nonce={nonce}>
 			<GeneralErrorBoundary />
 		</Document>
-	)
+	);
 }

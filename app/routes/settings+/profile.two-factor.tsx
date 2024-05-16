@@ -1,16 +1,22 @@
-import { type SEOHandle } from '@nasa-gcn/remix-seo'
-import { Outlet } from '@remix-run/react'
-import { Icon } from '#app/components/ui/icon.tsx'
-import { type VerificationTypes } from '#app/routes/_auth+/verify.tsx'
-import { type BreadcrumbHandle } from './profile.tsx'
+import type { SEOHandle } from "@nasa-gcn/remix-seo";
+import { Outlet } from "@remix-run/react";
+import type { VerificationTypes } from "#app/routes/_auth+/verify.tsx";
+import type { BreadcrumbHandle } from "./profile.tsx";
+import { LockClosedIcon } from "@radix-ui/react-icons";
+import { Button } from "@radix-ui/themes";
 
 export const handle: BreadcrumbHandle & SEOHandle = {
-	breadcrumb: <Icon name="lock-closed">2FA</Icon>,
+	breadcrumb: (
+		<Button variant="ghost">
+			<LockClosedIcon />
+			2FA
+		</Button>
+	),
 	getSitemapEntries: () => null,
-}
+};
 
-export const twoFAVerificationType = '2fa' satisfies VerificationTypes
+export const twoFAVerificationType = "2fa" satisfies VerificationTypes;
 
 export default function TwoFactorRoute() {
-	return <Outlet />
+	return <Outlet />;
 }

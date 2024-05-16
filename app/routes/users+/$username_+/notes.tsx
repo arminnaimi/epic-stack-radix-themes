@@ -1,11 +1,20 @@
-import { invariantResponse } from '@epic-web/invariant'
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
-import { Link, NavLink, Outlet, useLoaderData } from '@remix-run/react'
-import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
-import { Icon } from '#app/components/ui/icon.tsx'
-import { prisma } from '#app/utils/db.server.ts'
-import { cn, getUserImgSrc } from '#app/utils/misc.tsx'
-import { useOptionalUser } from '#app/utils/user.ts'
+import { invariantResponse } from "@epic-web/invariant";
+import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import { GeneralErrorBoundary } from "#app/components/error-boundary.tsx";
+import { prisma } from "#app/utils/db.server.ts";
+import { getUserImgSrc } from "#app/utils/misc.tsx";
+import { useOptionalUser } from "#app/utils/user.ts";
+import { PlusIcon } from "@radix-ui/react-icons";
+import {
+	Box,
+	Button,
+	Container,
+	Flex,
+	Grid,
+	Heading,
+	ScrollArea,
+} from "@radix-ui/themes";
 
 export async function loader({ params }: LoaderFunctionArgs) {
 	const owner = await prisma.user.findFirst({
@@ -17,74 +26,90 @@ export async function loader({ params }: LoaderFunctionArgs) {
 			notes: { select: { id: true, title: true } },
 		},
 		where: { username: params.username },
-	})
+	});
 
-	invariantResponse(owner, 'Owner not found', { status: 404 })
+	invariantResponse(owner, "Owner not found", { status: 404 });
 
-	return json({ owner })
+	return json({ owner });
 }
 
 export default function NotesRoute() {
-	const data = useLoaderData<typeof loader>()
-	const user = useOptionalUser()
-	const isOwner = user?.id === data.owner.id
-	const ownerDisplayName = data.owner.name ?? data.owner.username
-	const navLinkDefaultClassName =
-		'line-clamp-2 block rounded-l-full py-2 pl-8 pr-6 text-base lg:text-xl'
+	const data = useLoaderData<typeof loader>();
+	const user = useOptionalUser();
+	const isOwner = user?.id === data.owner.id;
+	const ownerDisplayName = data.owner.name ?? data.owner.username;
+
 	return (
-		<main className="container flex h-full min-h-[400px] px-0 pb-12 md:px-8">
-			<div className="grid w-full grid-cols-4 bg-muted pl-2 md:container md:rounded-3xl md:pr-0">
-				<div className="relative col-span-1">
-					<div className="absolute inset-0 flex flex-col">
-						<Link
-							to={`/users/${data.owner.username}`}
-							className="flex flex-col items-center justify-center gap-2 bg-muted pb-4 pl-8 pr-4 pt-12 lg:flex-row lg:justify-start lg:gap-4"
+		<Flex pb="6" minHeight="400px" height="100%" px="6" className="container">
+			<Grid columns="4" width="100%">
+				<Box
+					position="relative"
+					gridColumn="1"
+					className="bg-[var(--gray-3)] md:rounded-l-3xl"
+				>
+					<Flex direction="column" inset="0" position="absolute">
+						<Flex
+							direction={{ initial: "column", lg: "row" }}
+							align="center"
+							justify={{ initial: "center", lg: "start" }}
+							gap={{ initial: "2", lg: "4" }}
+							pb="4"
+							pl="8"
+							pr="4"
+							pt="4"
+							asChild
 						>
-							<img
-								src={getUserImgSrc(data.owner.image?.id)}
-								alt={ownerDisplayName}
-								className="h-16 w-16 rounded-full object-cover lg:h-24 lg:w-24"
-							/>
-							<h1 className="text-center text-base font-bold md:text-lg lg:text-left lg:text-2xl">
-								{ownerDisplayName}'s Notes
-							</h1>
-						</Link>
-						<ul className="overflow-y-auto overflow-x-hidden pb-12">
-							{isOwner ? (
-								<li className="p-1 pr-0">
-									<NavLink
-										to="new"
-										className={({ isActive }) =>
-											cn(navLinkDefaultClassName, isActive && 'bg-accent')
-										}
-									>
-										<Icon name="plus">New Note</Icon>
-									</NavLink>
-								</li>
-							) : null}
-							{data.owner.notes.map(note => (
-								<li key={note.id} className="p-1 pr-0">
-									<NavLink
-										to={note.id}
-										preventScrollReset
-										prefetch="intent"
-										className={({ isActive }) =>
-											cn(navLinkDefaultClassName, isActive && 'bg-accent')
-										}
-									>
-										{note.title}
-									</NavLink>
-								</li>
-							))}
-						</ul>
-					</div>
-				</div>
-				<div className="relative col-span-3 bg-accent md:rounded-r-3xl">
+							<Link to={`/users/${data.owner.username}`}>
+								<img
+									src={getUserImgSrc(data.owner.image?.id)}
+									alt={ownerDisplayName}
+									className="h-16 w-16 rounded-full object-cover lg:h-24 lg:w-24"
+								/>
+								<Heading
+									size={{ initial: "4", md: "5", lg: "6" }}
+									align={{
+										initial: "center",
+										lg: "left",
+									}}
+								>
+									{ownerDisplayName}'s Notes
+								</Heading>
+							</Link>
+						</Flex>
+
+						<ScrollArea scrollbars="vertical">
+							<Flex direction="column" gap="2" px="3">
+								{isOwner ? (
+									<Button asChild>
+										<NavLink to="new">
+											<PlusIcon />
+											New Note
+										</NavLink>
+									</Button>
+								) : null}
+								{data.owner.notes.map((note) => (
+									<Button key={note.id} variant="soft" asChild>
+										<NavLink to={note.id} preventScrollReset prefetch="intent">
+											{note.title}
+										</NavLink>
+									</Button>
+								))}
+							</Flex>
+						</ScrollArea>
+					</Flex>
+				</Box>
+				<Box
+					position="relative"
+					gridColumn="3"
+					gridColumnStart="2"
+					gridColumnEnd="5"
+					className="bg-[var(--olive-2)] md:rounded-r-3xl"
+				>
 					<Outlet />
-				</div>
-			</div>
-		</main>
-	)
+				</Box>
+			</Grid>
+		</Flex>
+	);
 }
 
 export function ErrorBoundary() {
@@ -96,5 +121,5 @@ export function ErrorBoundary() {
 				),
 			}}
 		/>
-	)
+	);
 }

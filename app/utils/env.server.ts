@@ -1,7 +1,7 @@
-import { z } from 'zod'
+import { z } from "zod";
 
 const schema = z.object({
-	NODE_ENV: z.enum(['production', 'development', 'test'] as const),
+	NODE_ENV: z.enum(["production", "development", "test"] as const),
 	DATABASE_PATH: z.string(),
 	DATABASE_URL: z.string(),
 	SESSION_SECRET: z.string(),
@@ -13,11 +13,11 @@ const schema = z.object({
 	// If you plan to use Resend, uncomment this line
 	// RESEND_API_KEY: z.string(),
 	// If you plan to use GitHub auth, remove the default:
-	GITHUB_CLIENT_ID: z.string().default('MOCK_GITHUB_CLIENT_ID'),
-	GITHUB_CLIENT_SECRET: z.string().default('MOCK_GITHUB_CLIENT_SECRET'),
-	GITHUB_TOKEN: z.string().default('MOCK_GITHUB_TOKEN'),
-	ALLOW_INDEXING: z.enum(['true', 'false']).optional(),
-})
+	GITHUB_CLIENT_ID: z.string().default("MOCK_GITHUB_CLIENT_ID"),
+	GITHUB_CLIENT_SECRET: z.string().default("MOCK_GITHUB_CLIENT_SECRET"),
+	GITHUB_TOKEN: z.string().default("MOCK_GITHUB_TOKEN"),
+	ALLOW_INDEXING: z.enum(["true", "false"]).optional(),
+});
 
 declare global {
 	namespace NodeJS {
@@ -26,15 +26,15 @@ declare global {
 }
 
 export function init() {
-	const parsed = schema.safeParse(process.env)
+	const parsed = schema.safeParse(process.env);
 
 	if (parsed.success === false) {
 		console.error(
-			'❌ Invalid environment variables:',
+			"❌ Invalid environment variables:",
 			parsed.error.flatten().fieldErrors,
-		)
+		);
 
-		throw new Error('Invalid environment variables')
+		throw new Error("Invalid environment variables");
 	}
 }
 
@@ -52,14 +52,14 @@ export function getEnv() {
 		MODE: process.env.NODE_ENV,
 		SENTRY_DSN: process.env.SENTRY_DSN,
 		ALLOW_INDEXING: process.env.ALLOW_INDEXING,
-	}
+	};
 }
 
-type ENV = ReturnType<typeof getEnv>
+type ENV = ReturnType<typeof getEnv>;
 
 declare global {
-	var ENV: ENV
+	var ENV: ENV;
 	interface Window {
-		ENV: ENV
+		ENV: ENV;
 	}
 }

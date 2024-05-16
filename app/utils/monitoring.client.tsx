@@ -1,6 +1,6 @@
-import { useLocation, useMatches } from '@remix-run/react'
-import * as Sentry from '@sentry/remix'
-import { useEffect } from 'react'
+import { useLocation, useMatches } from "@remix-run/react";
+import * as Sentry from "@sentry/remix";
+import { useEffect } from "react";
 
 export function init() {
 	Sentry.init({
@@ -8,16 +8,16 @@ export function init() {
 		environment: ENV.MODE,
 		beforeSend(event) {
 			if (event.request?.url) {
-				const url = new URL(event.request.url)
+				const url = new URL(event.request.url);
 				if (
-					url.protocol === 'chrome-extension:' ||
-					url.protocol === 'moz-extension:'
+					url.protocol === "chrome-extension:" ||
+					url.protocol === "moz-extension:"
 				) {
 					// This error is from a browser extension, ignore it
-					return null
+					return null;
 				}
 			}
-			return event
+			return event;
 		},
 		integrations: [
 			new Sentry.BrowserTracing({
@@ -41,5 +41,5 @@ export function init() {
 		// plus for 100% of sessions with an error
 		replaysSessionSampleRate: 0.1,
 		replaysOnErrorSampleRate: 1.0,
-	})
+	});
 }

@@ -1,10 +1,10 @@
 // learn more: https://fly.io/docs/reference/configuration/#services-http_checks
-import { type LoaderFunctionArgs } from '@remix-run/node'
-import { prisma } from '#app/utils/db.server.ts'
+import type { LoaderFunctionArgs } from "@remix-run/node";
+import { prisma } from "#app/utils/db.server.ts";
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const host =
-		request.headers.get('X-Forwarded-Host') ?? request.headers.get('host')
+		request.headers.get("X-Forwarded-Host") ?? request.headers.get("host");
 
 	try {
 		// if we can connect to the database and make a simple query
@@ -12,15 +12,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		await Promise.all([
 			prisma.user.count(),
 			fetch(`${new URL(request.url).protocol}${host}`, {
-				method: 'HEAD',
-				headers: { 'X-Healthcheck': 'true' },
-			}).then(r => {
-				if (!r.ok) return Promise.reject(r)
+				method: "HEAD",
+				headers: { "X-Healthcheck": "true" },
+			}).then((r) => {
+				if (!r.ok) return Promise.reject(r);
 			}),
-		])
-		return new Response('OK')
+		]);
+		return new Response("OK");
 	} catch (error: unknown) {
-		console.log('healthcheck ❌', { error })
-		return new Response('ERROR', { status: 500 })
+		console.log("healthcheck ❌", { error });
+		return new Response("ERROR", { status: 500 });
 	}
 }
