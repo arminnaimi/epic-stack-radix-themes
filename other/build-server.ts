@@ -14,7 +14,6 @@ const allFiles = globSync(globsafe(here("../server/**/*.*")), {
 	ignore: [
 		"server/dev-server.js", // for development only
 		"**/tsconfig.json",
-		"**/eslint*",
 		"**/__tests__/**",
 	],
 });

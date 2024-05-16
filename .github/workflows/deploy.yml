@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   lint:
-    name: ⬣ ESLint
+    name: ⬣ Biome Lint
     runs-on: ubuntu-22.04
     steps:
       - name: ⬇️ Checkout repo
