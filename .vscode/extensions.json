@@ -1,8 +1,8 @@
 {
-  "recommendations": [
-    "bradlc.vscode-tailwindcss",
-    "prisma.prisma",
-    "qwtel.sqlite-viewer",
-    "github.vscode-github-actions"
-  ]
+	"recommendations": [
+		"bradlc.vscode-tailwindcss",
+		"prisma.prisma",
+		"qwtel.sqlite-viewer",
+		"github.vscode-github-actions"
+	]
 }
